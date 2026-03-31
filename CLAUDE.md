@@ -23,6 +23,13 @@ This is a Claude Code **skill** (`find-skill`) that searches, recommends, and in
 
 ## Commands
 
+| Command | Description |
+|---------|-------------|
+| `/find-skill <query>` | Search for skills |
+| `/install-skill <owner/repo>` | Install skill from GitHub |
+| `/install-skill <url>` | Install skill by URL |
+| `/install-skill <name>` | Install skill by catalogue name |
+
 ```bash
 # Run catalogue update manually
 ~/.claude/skills/find-skill/update-skills-catalogue.sh

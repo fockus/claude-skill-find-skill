@@ -9,6 +9,7 @@ echo -n "Remove find-skill? (y/n): "; read -r c; [ "$c" != "y" ] && exit 0
 echo "  Cleaned cron entries (if any)"
 
 rm -rf "$HOME/.claude/skills/find-skill"
+rm -f "$HOME/.claude/commands/install-skill.md"
 rm -f "$(cd "$(dirname "$0")" && pwd)/.installed-manifest.json"
 
 echo -e "\n${GREEN}═══ Uninstalled ═══${NC}\n"

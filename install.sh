@@ -35,6 +35,15 @@ for f in SKILL.md CLAUDE.md update-skills-catalogue.sh; do
 done
 echo -e "  ${GREEN}✓${NC} Skill files copied"
 
+# Copy commands
+mkdir -p "$CLAUDE_DIR/commands"
+for f in "$SKILL_DIR"/commands/*.md; do
+  [ -f "$f" ] || continue
+  cp "$f" "$CLAUDE_DIR/commands/$(basename "$f")"
+  INSTALLED_FILES+=("$CLAUDE_DIR/commands/$(basename "$f")")
+done
+echo -e "  ${GREEN}✓${NC} Commands installed"
+
 # ═══ Step 2: API Key setup ═══
 echo -e "${BLUE}[2/4] Marketplace API keys${NC}"
 echo ""

@@ -23,6 +23,10 @@ In Claude Code:
 /find-skill testing        # Find testing skills
 /find-skill react          # Find React skills
 /find-skill deploy --all   # Show all deploy-related skills
+
+/install-skill fockus/claude-skill-build           # Install by owner/repo
+/install-skill https://github.com/user/skill-repo  # Install by URL
+/install-skill memory-bank                          # Install by name (from catalogue)
 ```
 
 ### Parameters
