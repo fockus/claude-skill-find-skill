@@ -4,19 +4,32 @@ Multi-agent skill discovery and installation — search **4800+ skills** from **
 
 ## Install
 
+Pick any method — they all end with `/find-skill` and `/install-skill` available in your AI agent.
+
 ### Homebrew (macOS / Linux)
 
 ```bash
 brew tap fockus/tap
 brew install find-skill
-find-skill
+find-skill              # runs the installer, auto-detects Claude Code / Codex / OpenCode / Cursor
 ```
 
 ### pipx
 
 ```bash
 pipx install find-skill
-find-skill
+find-skill              # runs the installer
+```
+
+After install, `find-skill` also works as a standalone CLI:
+
+```bash
+find-skill              # install into detected agents (first run)
+find-skill --target claude          # install for Claude Code only
+find-skill --target all             # install for all 4 agents
+find-skill update                   # refresh the skill catalogue
+find-skill uninstall                # remove from all agents
+find-skill version                  # show version
 ```
 
 ### One-liner (curl)
@@ -25,29 +38,20 @@ find-skill
 curl -sSL https://raw.githubusercontent.com/fockus/claude-skill-find-skill/main/quick-install.sh | bash
 ```
 
-Auto-detects installed agents and sets up `/find-skill` + `/install-skill` in each. Pass target explicitly:
+Target a specific agent:
 
 ```bash
-curl -sSL .../quick-install.sh | bash -s -- --target claude
-curl -sSL .../quick-install.sh | bash -s -- --target opencode,cursor
-curl -sSL .../quick-install.sh | bash -s -- --target all
+curl -sSL https://raw.githubusercontent.com/fockus/claude-skill-find-skill/main/quick-install.sh | bash -s -- --target claude
+curl -sSL https://raw.githubusercontent.com/fockus/claude-skill-find-skill/main/quick-install.sh | bash -s -- --target opencode,cursor
+curl -sSL https://raw.githubusercontent.com/fockus/claude-skill-find-skill/main/quick-install.sh | bash -s -- --target all
 ```
 
-### Manual install
+### Manual
 
 ```bash
 git clone https://github.com/fockus/claude-skill-find-skill.git ~/.claude/skills/claude-skill-find-skill
 cd ~/.claude/skills/claude-skill-find-skill
-chmod +x install.sh uninstall.sh update-skills-catalogue.sh scripts/install-skill.sh
 ./install.sh
-```
-
-Installer options:
-```bash
-./install.sh                       # auto-detect installed agents
-./install.sh --target claude       # Claude Code only
-./install.sh --target codex,cursor # Codex + Cursor
-./install.sh --target all          # all 4
 ```
 
 ## Supported agents
