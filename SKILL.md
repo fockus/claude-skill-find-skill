@@ -1,73 +1,73 @@
 ---
 name: find-skill
-description: Находит и устанавливает Claude Code Skills для проекта. 14 источников, ранжирование по звёздам GitHub. Примеры: "найди скил для Docker", "поищи скилы для тестирования", "покажи все скилы по react". Поддерживает параметры: limit (сколько показать), page (пагинация), --all (показать все).
+description: Finds and installs Claude Code Skills for your project. 14 sources, ranked by GitHub stars. Examples: "find a skill for Docker", "search for testing skills", "show all React skills". Supports parameters: limit (how many to show), page (pagination), --all (show all results).
 ---
 
-# Find Skill — поиск и установка скилов
+# Find Skill — skill discovery and installation
 
-Ты — эксперт по поиску скилов с локальным каталогом (14 источников, ранжирование по GitHub stars).
-
----
-
-## Параметры вызова
-
-Скил принимает аргументы в свободной форме. Парси их так:
-
-| Формат | Пример | Значение |
-|--------|--------|----------|
-| `<запрос>` | `docker` | Поиск по ключевому слову, показать top 3 |
-| `<запрос> --limit N` | `react --limit 10` | Показать N результатов |
-| `<запрос> --all` | `design --all` | Показать ВСЕ найденные результаты |
-| `<запрос> --page N` | `python --limit 5 --page 2` | Страница N (по `limit` на страницу) |
-| `<запрос> --agent <name>` | `docker --agent cursor` | Фильтр по агенту: `claude`, `codex`, `opencode`, `cursor`, `any` |
-| `--top N` | `--top 20` | Показать top-N скилов по звёздам из всего каталога |
-| `--stats` | `--stats` | Статистика каталога по источникам и агентам |
-| `--category <cat>` | `--category design` | Все скилы категории |
-
-**Значения по умолчанию:** limit=5, page=1, **agent=claude** (текущий агент — Claude Code).
-
-**Важно про `--agent`:** по умолчанию показываются только скилы совместимые с текущим агентом (Claude Code). Используй `--agent any` чтобы снять фильтр и увидеть весь каталог, `--agent cursor` чтобы найти скилы только для Cursor и т.д.
+You are an expert skill finder with a local catalogue (14 sources, ranked by GitHub stars).
 
 ---
 
-## Этап 0 — Проверить свежесть каталога
+## Input parameters
+
+The skill accepts free-form arguments. Parse them as follows:
+
+| Format | Example | Meaning |
+|--------|---------|---------|
+| `<query>` | `docker` | Keyword search, show top 3 |
+| `<query> --limit N` | `react --limit 10` | Show N results |
+| `<query> --all` | `design --all` | Show ALL matching results |
+| `<query> --page N` | `python --limit 5 --page 2` | Page N (with `limit` per page) |
+| `<query> --agent <name>` | `docker --agent cursor` | Filter by agent: `claude`, `codex`, `opencode`, `cursor`, `any` |
+| `--top N` | `--top 20` | Show top-N skills by stars across the entire catalogue |
+| `--stats` | `--stats` | Catalogue stats by source and agent |
+| `--category <cat>` | `--category design` | All skills in a category |
+
+**Defaults:** limit=5, page=1, **agent=claude** (current agent — Claude Code).
+
+**Note on `--agent`:** by default only skills compatible with the current agent (Claude Code) are shown. Use `--agent any` to remove the filter and see the full catalogue, `--agent cursor` to find skills for Cursor only, etc.
+
+---
+
+## Stage 0 — Check catalogue freshness
 
 ```bash
 CACHE_FILE="$HOME/.claude/skills/find-skill/cache/catalogue.json"
 LAST_UPDATE="$HOME/.claude/skills/find-skill/cache/last_update.txt"
 
 if [ ! -f "$LAST_UPDATE" ]; then
-  echo "Каталог не инициализирован — нужно обновить"
+  echo "Catalogue not initialized — update required"
   NEEDS_UPDATE=true
 else
   LAST=$(cat "$LAST_UPDATE")
   NOW=$(date +%s)
   DIFF=$(( (NOW - LAST) / 86400 ))
   if [ "$DIFF" -gt 30 ]; then
-    echo "Каталог устарел ($DIFF дней) — нужно обновить"
+    echo "Catalogue is stale ($DIFF days old) — update required"
     NEEDS_UPDATE=true
   else
-    echo "Каталог актуален (обновлён $DIFF дней назад)"
+    echo "Catalogue is fresh (updated $DIFF days ago)"
     NEEDS_UPDATE=false
   fi
 fi
 ```
 
-Если `NEEDS_UPDATE=true` — запусти `~/.claude/skills/find-skill/update-skills-catalogue.sh`.
+If `NEEDS_UPDATE=true` — run `~/.claude/skills/find-skill/update-skills-catalogue.sh`.
 
 ---
 
-## Этап 1 — Понять запрос
+## Stage 1 — Understand the query
 
-Если запрос неясен — задай 1-2 вопроса:
-- Какой стек/язык/фреймворк?
-- Для какой конкретной задачи?
+If the query is unclear — ask 1-2 questions:
+- What stack / language / framework?
+- What specific task is this for?
 
-Если запрос ясен — сразу к этапу 2.
+If the query is clear — proceed directly to stage 2.
 
 ---
 
-## Этап 2 — Поиск в локальном каталоге
+## Stage 2 — Search the local catalogue
 
 ```bash
 cat ~/.claude/skills/find-skill/cache/catalogue.json | \
@@ -76,33 +76,33 @@ import json, sys, re
 
 data = json.load(sys.stdin)
 query = 'QUERY'.lower()
-limit = LIMIT        # заменить на число из параметра
-page = PAGE          # заменить на число из параметра
+limit = LIMIT        # replace with number from parameter
+page = PAGE          # replace with number from parameter
 show_all = SHOW_ALL  # True/False
 agent_filter = 'AGENT_FILTER'  # 'claude', 'codex', 'opencode', 'cursor', 'any'
 
-# Приоритет источников — баллы пропорциональны звёздам на GitHub (апрель 2026)
+# Source priority — scores proportional to GitHub stars (April 2026)
 SOURCE_PRIORITY = {
-    'Anthropic': 60,              # 105K stars — официальные скилы Anthropic
-    'skills.sh': 30,              # Vercel-curated каталог, ~4K скилов
-    'hesreallyhim': 28,           # 39.9K stars — топ awesome-list
-    'ComposioHQ': 25,             # 49K stars — курированный список
+    'Anthropic': 60,              # 105K stars — official Anthropic skills
+    'skills.sh': 30,              # Vercel-curated catalogue, ~4K skills
+    'hesreallyhim': 28,           # 39.9K stars — top awesome-list
+    'ComposioHQ': 25,             # 49K stars — curated list
     'vercel-labs': 12,            # 24K stars — Vercel agent skills
     'VoltAgent-subagents': 8,     # 15.5K stars — Claude Code subagents
     'VoltAgent': 7,               # 13K stars — awesome agent skills
-    'travisvn': 5,                # 10K stars — курированный список
-    'BehiSecc': 4,                # 8K stars — курированный список
-    'alirezarezvani': 4,          # 8K stars — большая коллекция
+    'travisvn': 5,                # 10K stars — curated list
+    'BehiSecc': 4,                # 8K stars — curated list
+    'alirezarezvani': 4,          # 8K stars — large collection
     'heilcheng': 3,               # 3.5K stars — awesome agent skills
-    'daymade': 3,                 # 744 stars — production-ready коллекция
+    'daymade': 3,                 # 744 stars — production-ready collection
     'mxyhi': 3,                   # 188 stars — ok-skills
-    'SkillsMP': 3,                # Маркетплейс (много, но менее проверены)
+    'SkillsMP': 3,                # Marketplace (many, but less vetted)
 }
 
-# Поиск: имя, описание, теги + фильтр по агенту
+# Search: name, description, tags + agent filter
 results = []
 for s in data['skills']:
-    # Фильтр по агенту (если agent_filter != 'any')
+    # Agent filter (if agent_filter != 'any')
     if agent_filter and agent_filter != 'any':
         skill_agents = s.get('agents', ['claude', 'codex'])  # legacy default
         if agent_filter not in skill_agents:
@@ -113,7 +113,7 @@ for s in data['skills']:
     desc_l = s.get('description', '').lower()
     tags_l = [t.lower() for t in s.get('tags', [])]
 
-    # Релевантность запросу
+    # Query relevance
     if query == name_l:
         score = 100
     elif query in name_l:
@@ -124,11 +124,11 @@ for s in data['skills']:
         score = 10
 
     if score > 0:
-        # Бонус за источник (приоритет доверия)
+        # Bonus for source (trust priority)
         source = s.get('source', '')
         source_bonus = SOURCE_PRIORITY.get(source, 0)
 
-        # Бонус за звёзды (макс +20)
+        # Bonus for stars (max +20)
         try:
             stars = int(str(s.get('stars', 0) or 0).replace(',','').replace('+',''))
         except:
@@ -140,7 +140,7 @@ for s in data['skills']:
         s['_source_rank'] = source_bonus
         results.append(s)
 
-# Сортировка: score desc (включает source + stars), затем stars desc
+# Sort: score desc (includes source + stars), then stars desc
 results.sort(key=lambda x: (-x['_score'], -x['_stars']))
 
 total = len(results)
@@ -165,152 +165,152 @@ print(json.dumps(output, indent=2, ensure_ascii=False))
 "
 ```
 
-**Как использовать `agent_filter`:**
-- По умолчанию для этого файла: `agent_filter = 'claude'` (мы в Claude Code)
-- Если пользователь указал `--agent any` — показать весь каталог (agent_filter = 'any')
-- Если указал `--agent cursor|codex|opencode` — подставить это значение
-- В `--stats` отображай распределение по агентам
+**How to use `agent_filter`:**
+- Default for this file: `agent_filter = 'claude'` (we are in Claude Code)
+- If user specified `--agent any` — show full catalogue (agent_filter = 'any')
+- If specified `--agent cursor|codex|opencode` — substitute that value
+- In `--stats` display distribution by agent
 
 ---
 
-## Этап 3 — Живой поиск (если в каталоге < 2 результатов)
+## Stage 3 — Live search (if catalogue returns < 2 results)
 
 ### SkillsMP API:
 ```bash
 source "$HOME/.claude/skills/find-skill/.env" 2>/dev/null
 
-# Поиск по ключевому слову
+# Keyword search
 curl -s "https://skillsmp.com/api/v1/skills/search?q=QUERY&limit=LIMIT" \
   -H "Authorization: Bearer $SKILLSMP_API_KEY"
 
-# AI семантический поиск
+# AI semantic search
 curl -s "https://skillsmp.com/api/v1/skills/ai-search?q=QUERY+CONTEXT" \
   -H "Authorization: Bearer $SKILLSMP_API_KEY"
 ```
 
 ---
 
-## Этап 4 — Показать результаты
+## Stage 4 — Show results
 
-**Никогда не устанавливать без подтверждения.**
+**Never install without confirmation.**
 
-Формат вывода зависит от количества:
+Output format depends on the number of results:
 
-### Уровни доверия (по источнику, звёзды апрель 2026):
+### Trust levels (by source, stars as of April 2026):
 ```
-Anthropic (105K)                              → Официальный (зелёный)
-skills.sh (Vercel-curated, ~4K entries)       → Официальный каталог (зелёный)
-hesreallyhim (39.9K) / ComposioHQ (49K)       → Топ awesome-list (зелёный)
-vercel-labs (24K)                             → Курированный (жёлтый)
-VoltAgent-subagents (15.5K) / VoltAgent (13K) → Курированный (жёлтый)
-travisvn (10K) / BehiSecc (8K)                → Курированный (жёлтый)
-alirezarezvani (8K) / heilcheng (3.5K)        → Сообщество-проверенный (оранжевый)
-daymade (744) / mxyhi (188)                   → Сообщество (оранжевый)
-SkillsMP                                      → Маркетплейс (серый, проверять вручную)
+Anthropic (105K)                              → Official (green)
+skills.sh (Vercel-curated, ~4K entries)       → Official catalogue (green)
+hesreallyhim (39.9K) / ComposioHQ (49K)       → Top awesome-list (green)
+vercel-labs (24K)                             → Curated (yellow)
+VoltAgent-subagents (15.5K) / VoltAgent (13K) → Curated (yellow)
+travisvn (10K) / BehiSecc (8K)                → Curated (yellow)
+alirezarezvani (8K) / heilcheng (3.5K)        → Community-vetted (orange)
+daymade (744) / mxyhi (188)                   → Community (orange)
+SkillsMP                                      → Marketplace (grey, verify manually)
 ```
 
-### Компактный (до 5 результатов):
+### Compact (up to 5 results):
 ```
-Найдено N скилов по запросу "QUERY":
+Found N skills for "QUERY":
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. [название] (РЕКОМЕНДОВАНО)
-   Источник  : Anthropic        | Доверие: Официальный
-   Описание  : [1-2 предложения]
-   Звёзды    : [N]
-   Repo      : [URL]
+1. [name] (RECOMMENDED)
+   Source      : Anthropic        | Trust: Official
+   Description : [1-2 sentences]
+   Stars       : [N]
+   Repo        : [URL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. [название]
-   Источник  : SkillsMP         | Доверие: Маркетплейс — проверь repo
+2. [name]
+   Source      : SkillsMP         | Trust: Marketplace — verify repo
    ...
 
-Установить? (1, 2, все, или нет)
+Install? (1, 2, all, or no)
 ```
 
-### Табличный (6+ результатов):
+### Table (6+ results):
 ```
-Найдено N скилов по запросу "QUERY" (стр. PAGE/TOTAL_PAGES):
+Found N skills for "QUERY" (page PAGE/TOTAL_PAGES):
 
-| #  | Название          | Источник   | Доверие | Звёзды | Описание (кратко)      |
-|----|-------------------|-----------|---------|--------|------------------------|
-| 1  | skill-name        | Anthropic | Офиц.   | 9600   | Краткое описание...    |
-| 2  | another-skill     | travisvn  | Курир.  | 5600   | Краткое описание...    |
-| 3  | some-skill        | SkillsMP  | Маркет. | 120    | Краткое описание...    |
+| #  | Name              | Source     | Trust   | Stars  | Description (brief)    |
+|----|-------------------|------------|---------|--------|------------------------|
+| 1  | skill-name        | Anthropic  | Offic.  | 9600   | Brief description...   |
+| 2  | another-skill     | travisvn   | Curat.  | 5600   | Brief description...   |
+| 3  | some-skill        | SkillsMP   | Market. | 120    | Brief description...   |
 
-Страница PAGE из TOTAL_PAGES. Следующая: /find-skill QUERY --page NEXT
-Установить? (номер, диапазон 1-3, все, или нет)
+Page PAGE of TOTAL_PAGES. Next: /find-skill QUERY --page NEXT
+Install? (number, range 1-3, all, or no)
 ```
 
-Результаты автоматически отсортированы: сначала официальные и курированные, затем community, в конце маркетплейс. При одинаковом источнике — по звёздам.
+Results are automatically sorted: official and curated first, then community, marketplace last. Within the same source — sorted by stars.
 
 ---
 
-## Этап 5 — Установить после подтверждения
+## Stage 5 — Install after confirmation
 
 ```bash
 mkdir -p ~/.claude/skills
 git clone [REPO_URL] ~/.claude/skills/[SKILL_NAME]
-echo "Skill [SKILL_NAME] установлен"
+echo "Skill [SKILL_NAME] installed"
 
-# Проверка
+# Verify
 ls ~/.claude/skills/[SKILL_NAME]/
 head -10 ~/.claude/skills/[SKILL_NAME]/SKILL.md
 ```
 
 ---
 
-## Этап 6 — Подтвердить и объяснить
+## Stage 6 — Confirm and explain
 
-После установки:
-1. Где установлен скил
-2. Как активировать (`/skill-name` или автоматически)
-3. Пример использования в текущем проекте
-
----
-
-## Специальные команды
-
-| Запрос | Действие |
-|--------|----------|
-| `обнови каталог` | Запустить `update-skills-catalogue.sh` |
-| `когда обновлялся каталог?` | Показать дату из `last_update.txt` |
-| `покажи весь каталог` | Все скилы по категориям |
-| `--top 20` | Top-20 по звёздам |
-| `--stats` | Статистика по источникам |
-| `react --all` | Все скилы по запросу |
-| `python --limit 10 --page 2` | Стр. 2 по 10 результатов |
+After installation:
+1. Where the skill was installed
+2. How to activate it (`/skill-name` or automatically)
+3. An example of how to use it in the current project
 
 ---
 
-## Правила
+## Special commands
 
-- **Никогда не устанавливать без подтверждения**
-- **Сначала кэш, потом API** (экономим 500 req/день)
-- **По умолчанию 5 результатов**, но пользователь может запросить больше
-- **Сигнализировать риски** если источник неизвестен
-- **Приоритет**: Anthropic (105K) > skills.sh (Vercel-catalog) > hesreallyhim (39.9K) > ComposioHQ (49K) > vercel-labs (24K) > VoltAgent-subagents (15.5K) > VoltAgent (13K) > travisvn (10K) > BehiSecc/alirezarezvani (8K) > heilcheng (3.5K) > daymade/mxyhi > SkillsMP
-- **Табличный формат** при 6+ результатах для компактности
+| Query | Action |
+|-------|--------|
+| `update catalogue` | Run `update-skills-catalogue.sh` |
+| `when was catalogue updated?` | Show date from `last_update.txt` |
+| `show full catalogue` | All skills by category |
+| `--top 20` | Top-20 by stars |
+| `--stats` | Stats by source |
+| `react --all` | All skills matching query |
+| `python --limit 10 --page 2` | Page 2 with 10 results per page |
 
 ---
 
-## Деактивация / удаление
+## Rules
 
-### Временно отключить
+- **Never install without confirmation**
+- **Cache first, then API** (saves 500 req/day)
+- **Default 5 results**, but user can request more
+- **Flag risks** if the source is unknown
+- **Priority**: Anthropic (105K) > skills.sh (Vercel-catalog) > hesreallyhim (39.9K) > ComposioHQ (49K) > vercel-labs (24K) > VoltAgent-subagents (15.5K) > VoltAgent (13K) > travisvn (10K) > BehiSecc/alirezarezvani (8K) > heilcheng (3.5K) > daymade/mxyhi > SkillsMP
+- **Table format** for 6+ results to keep output compact
+
+---
+
+## Deactivation / removal
+
+### Temporarily disable
 ```bash
 mv ~/.claude/skills/find-skill ~/.claude/skills/find-skill-disabled
 ```
 
-### Включить обратно
+### Re-enable
 ```bash
 mv ~/.claude/skills/find-skill-disabled ~/.claude/skills/find-skill
 ```
 
-### Остановить автообновление (cron)
+### Stop auto-update (cron)
 ```bash
 crontab -l | grep -v "update-skills-catalogue" | crontab -
 ```
 
-### Полностью удалить
+### Remove completely
 ```bash
 crontab -l | grep -v "update-skills-catalogue" | crontab -
 rm -rf ~/.claude/skills/find-skill
