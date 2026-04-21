@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "find-skill"
+version = "1.0.0"
+description = "Multi-agent skill discovery — search 4800+ skills from 14 sources for Claude Code, Codex, OpenCode, Cursor"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+keywords = ["claude-code", "skills", "ai", "agents", "codex", "cursor", "opencode"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Environment :: Console",
+]
+
+[project.urls]
+Homepage = "https://github.com/fockus/claude-skill-find-skill"
+Repository = "https://github.com/fockus/claude-skill-find-skill"
+
+[project.scripts]
+find-skill = "find_skill_cli.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/find_skill_cli"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"install.sh"                             = "find_skill_cli/data/install.sh"
+"uninstall.sh"                           = "find_skill_cli/data/uninstall.sh"
+"update-skills-catalogue.sh"             = "find_skill_cli/data/update-skills-catalogue.sh"
+"SKILL.md"                               = "find_skill_cli/data/SKILL.md"
+"CLAUDE.md"                              = "find_skill_cli/data/CLAUDE.md"
+".env.example"                           = "find_skill_cli/data/.env.example"
+"commands/install-skill.md"              = "find_skill_cli/data/commands/install-skill.md"
+"scripts/install-skill.sh"              = "find_skill_cli/data/scripts/install-skill.sh"
+"adapters/codex/SKILL.md"               = "find_skill_cli/data/adapters/codex/SKILL.md"
+"adapters/cursor/find-skill.md"         = "find_skill_cli/data/adapters/cursor/find-skill.md"
+"adapters/cursor/install-skill.md"      = "find_skill_cli/data/adapters/cursor/install-skill.md"
+"adapters/opencode/find-skill.md"       = "find_skill_cli/data/adapters/opencode/find-skill.md"
+"adapters/opencode/install-skill.md"    = "find_skill_cli/data/adapters/opencode/install-skill.md"

@@ -9,7 +9,7 @@ This is a Claude Code **skill** (`find-skill`) that searches, recommends, and in
 ## Key Files
 
 - `SKILL.md` — Skill definition and prompt (the instructions Claude follows when the skill is invoked)
-- `update-skills-catalogue.sh` — Shell script that fetches skills from 12 sources (Anthropic, ComposioHQ, vercel-labs, VoltAgent-subagents, VoltAgent, travisvn, BehiSecc, alirezarezvani, heilcheng, daymade, mxyhi, SkillsMP API), deduplicates them, and writes `cache/catalogue.json`
+- `update-skills-catalogue.sh` — Shell script that fetches skills from 14 sources (Anthropic, ComposioHQ, vercel-labs, VoltAgent-subagents, VoltAgent, travisvn, BehiSecc, alirezarezvani, heilcheng, daymade, mxyhi, hesreallyhim, skills.sh, SkillsMP API), deduplicates them, and writes `cache/catalogue.json`
 - `cache/catalogue.json` — Local skill catalogue (generated, not committed)
 - `cache/last_update.txt` — Unix timestamp of last catalogue update
 
@@ -18,7 +18,7 @@ This is a Claude Code **skill** (`find-skill`) that searches, recommends, and in
 1. On invocation, checks catalogue freshness (>30 days = stale)
 2. Searches `cache/catalogue.json` first (local, fast)
 3. Falls back to SkillsMP live API if <2 local results (requires `SKILLSMP_API_KEY`)
-4. Presents max 5 options ranked by source trust: Anthropic (105K) > ComposioHQ (49K) > vercel-labs (24K) > VoltAgent-subagents (15.5K) > VoltAgent (13K) > travisvn (10K) > BehiSecc/alirezarezvani (8K) > heilcheng (3.5K) > daymade/mxyhi > SkillsMP
+4. Presents max 5 options ranked by source trust: Anthropic (105K) > skills.sh (Vercel-catalog) > hesreallyhim (39.9K) > ComposioHQ (49K) > vercel-labs (24K) > VoltAgent-subagents (15.5K) > VoltAgent (13K) > travisvn (10K) > BehiSecc/alirezarezvani (8K) > heilcheng (3.5K) > daymade/mxyhi > SkillsMP
 5. Installs via `git clone` to `~/.claude/skills/` after user confirmation
 
 ## Commands

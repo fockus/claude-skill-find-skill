@@ -1,7 +1,7 @@
 #!/bin/bash
 # update-skills-catalogue.sh
 # Monthly catalogue update for Claude Code Skills
-# Sources: Anthropic + ComposioHQ + vercel-labs + VoltAgent(subagents) + VoltAgent(skills) + travisvn + BehiSecc + alirezarezvani + heilcheng + daymade + mxyhi + SkillsMP API
+# Sources: Anthropic + ComposioHQ + vercel-labs + VoltAgent(subagents) + VoltAgent(skills) + travisvn + BehiSecc + alirezarezvani + heilcheng + daymade + mxyhi + hesreallyhim + skills.sh + SkillsMP API
 
 CACHE_DIR="$HOME/.claude/skills/find-skill/cache"
 CATALOGUE="$CACHE_DIR/catalogue.json"
@@ -19,13 +19,15 @@ if [ -z "${SKILLSMP_API_KEY:-}" ]; then
 fi
 
 # Helper: parse awesome-list README pattern
+# 4th arg AGENTS: comma-separated compatible agents (default: claude,codex — SKILL.md format)
 parse_awesome_list() {
-  SOURCE_NAME="$1" REPO="$2" STARS="$3" python3 -c "
+  SOURCE_NAME="$1" REPO="$2" STARS="$3" AGENTS="${4:-claude,codex}" python3 -c "
 import sys, re, json, os
 content = sys.stdin.read()
 source_name = os.environ['SOURCE_NAME']
 repo = os.environ['REPO']
 stars = os.environ.get('STARS', '')
+agents = [a.strip() for a in os.environ.get('AGENTS', 'claude,codex').split(',') if a.strip()]
 skills = []
 # Match: - **name** - description OR - [name](url) - description
 pattern = r'[-*]\s+(?:\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\))\s*[-—:]\s*([^\n]+)'
@@ -45,6 +47,7 @@ for m in matches:
             'confidence': 'community-verified',
             'stars': stars or None,
             'tags': [],
+            'agents': agents,
             'category': 'community'
         })
 print(json.dumps(skills[:100]))
@@ -52,13 +55,15 @@ print(json.dumps(skills[:100]))
 }
 
 # Helper: parse GitHub API directory listing
+# 4th arg AGENTS: comma-separated compatible agents (default: claude,codex)
 parse_github_dirs() {
-  SOURCE_NAME="$1" REPO="$2" CONFIDENCE="$3" python3 -c "
+  SOURCE_NAME="$1" REPO="$2" CONFIDENCE="$3" AGENTS="${4:-claude,codex}" python3 -c "
 import json, sys, os
 data = json.load(sys.stdin)
 source_name = os.environ['SOURCE_NAME']
 repo = os.environ['REPO']
 confidence = os.environ['CONFIDENCE']
+agents = [a.strip() for a in os.environ.get('AGENTS', 'claude,codex').split(',') if a.strip()]
 skills = []
 if isinstance(data, list):
     for item in data:
@@ -73,6 +78,7 @@ if isinstance(data, list):
                 'confidence': confidence,
                 'stars': None,
                 'tags': [source_name.lower()],
+                'agents': agents,
                 'category': 'docs'
             })
 print(json.dumps(skills))
@@ -172,6 +178,7 @@ for block in blocks:
             'confidence': 'community-verified',
             'stars': '24059',
             'tags': ['vercel', 'react', 'nextjs'],
+            'agents': ['claude', 'codex'],
             'category': 'community'
         })
 print(json.dumps(skills))
@@ -193,7 +200,52 @@ HEILCHENG_SKILLS=$(curl -sf "https://raw.githubusercontent.com/heilcheng/awesome
 echo "  → $(count_json "$HEILCHENG_SKILLS") skills found" | tee -a "$LOG"
 
 # ─────────────────────────────────────────
-# SOURCE 12: SkillsMP API
+# SOURCE 12: hesreallyhim/awesome-claude-code (39.9K stars — top awesome-list)
+# ─────────────────────────────────────────
+echo "[$TIMESTAMP] Fetching hesreallyhim/awesome-claude-code..." | tee -a "$LOG"
+HESREALLYHIM_SKILLS=$(curl -sf "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md" | parse_awesome_list "hesreallyhim" "hesreallyhim/awesome-claude-code" "39900")
+echo "  → $(count_json "$HESREALLYHIM_SKILLS") skills found" | tee -a "$LOG"
+
+# ─────────────────────────────────────────
+# SOURCE 13: skills.sh (Vercel-curated catalog, ~4K skills via sitemap)
+# ─────────────────────────────────────────
+echo "[$TIMESTAMP] Fetching skills.sh sitemap..." | tee -a "$LOG"
+SKILLS_SH_SKILLS=$(curl -sf "https://skills.sh/sitemap.xml" | python3 -c "
+import sys, re, json
+content = sys.stdin.read()
+skills = []
+seen = set()
+# Extract URLs of format https://skills.sh/<owner>/<repo>/<skill-name>
+pattern = r'<loc>https://skills\.sh/([^/<]+)/([^/<]+)/([^<]+)</loc>'
+# Meta pages to skip (they appear as first path segment)
+meta_paths = {'picks', 'trending', 'hot', 'official', 'audits', 'docs', 'search', 'site', 'package', 'api', 's', 'internal', '.well-known', 'debug-security'}
+for m in re.findall(pattern, content):
+    owner, repo, skill_name = m
+    if owner in meta_paths:
+        continue
+    key = skill_name.lower().strip()
+    if not key or key in seen:
+        continue
+    seen.add(key)
+    skills.append({
+        'name': skill_name,
+        'description': f'{skill_name} — skill from {owner}/{repo} (via skills.sh)',
+        'source': 'skills.sh',
+        'repo': f'{owner}/{repo}',
+        'repo_url': f'https://github.com/{owner}/{repo}',
+        'install_url': f'https://skills.sh/{owner}/{repo}/{skill_name}',
+        'confidence': 'official-catalog',
+        'stars': None,
+        'tags': ['skills.sh', 'vercel-curated'],
+        'agents': ['claude', 'codex', 'opencode', 'cursor'],
+        'category': 'catalog'
+    })
+print(json.dumps(skills))
+" 2>/dev/null || echo "[]")
+echo "  → $(count_json "$SKILLS_SH_SKILLS") skills found" | tee -a "$LOG"
+
+# ─────────────────────────────────────────
+# SOURCE 14: SkillsMP API
 # ─────────────────────────────────────────
 SKILLSMP_SKILLS="[]"
 if [ -n "$SKILLSMP_API_KEY" ]; then
@@ -234,6 +286,7 @@ with open(raw_path) as f:
                         'confidence': 'community',
                         'stars': str(s.get('stars', 0)),
                         'tags': [s.get('author', '')],
+                        'agents': ['claude', 'codex'],
                         'category': 'community'
                     })
         except:
@@ -252,8 +305,8 @@ fi
 # ─────────────────────────────────────────
 echo "[$TIMESTAMP] Merging sources..." | tee -a "$LOG"
 
-ALL_SOURCES=("anthropic" "travisvn" "behisecc" "voltagent" "alirezarezvani" "mxyhi" "daymade" "composio" "vercel" "voltagent_sub" "heilcheng" "skillsmp")
-ALL_DATA=("$ANTHROPIC_SKILLS" "$TRAVISVN_SKILLS" "$BEHISECC_SKILLS" "$VOLTAGENT_SKILLS" "$ALIREZAREZVANI_SKILLS" "$MXYHI_SKILLS" "$DAYMADE_SKILLS" "$COMPOSIO_SKILLS" "$VERCEL_SKILLS" "$VOLTAGENT_SUB_SKILLS" "$HEILCHENG_SKILLS" "$SKILLSMP_SKILLS")
+ALL_SOURCES=("anthropic" "travisvn" "behisecc" "voltagent" "alirezarezvani" "mxyhi" "daymade" "composio" "vercel" "voltagent_sub" "heilcheng" "hesreallyhim" "skills_sh" "skillsmp")
+ALL_DATA=("$ANTHROPIC_SKILLS" "$TRAVISVN_SKILLS" "$BEHISECC_SKILLS" "$VOLTAGENT_SKILLS" "$ALIREZAREZVANI_SKILLS" "$MXYHI_SKILLS" "$DAYMADE_SKILLS" "$COMPOSIO_SKILLS" "$VERCEL_SKILLS" "$VOLTAGENT_SUB_SKILLS" "$HEILCHENG_SKILLS" "$HESREALLYHIM_SKILLS" "$SKILLS_SH_SKILLS" "$SKILLSMP_SKILLS")
 
 for i in "${!ALL_SOURCES[@]}"; do
   echo "${ALL_DATA[$i]}" > "$CACHE_DIR/_${ALL_SOURCES[$i]}.json"
