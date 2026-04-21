@@ -5,3 +5,7 @@ cache/update.log
 cache/_*.json
 cache/_*.jsonl
 .installed-manifest.json
+dist/
+build/
+*.egg-info/
+__pycache__/

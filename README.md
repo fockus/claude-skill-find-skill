@@ -162,13 +162,43 @@ date -r "$(cat ~/.claude/skills/find-skill/cache/last_update.txt)"
 
 ## API keys (optional)
 
-The skill works offline with local catalogue. For expanded results, add marketplace keys:
+The skill works fully **offline** with the local catalogue (4800+ skills). A SkillsMP key is only needed if you want:
 
-| Service | Purpose | How to get |
-|---|---|---|
-| SkillsMP | Live marketplace search + +352 skills in catalogue | Register at skillsmp.com |
+- The **live marketplace fallback** (`/find-skill` auto-queries SkillsMP when the local catalogue has <2 results)
+- **352 extra skills** added to your local catalogue on the next `update-skills-catalogue.sh` run
 
-Keys live in `~/.claude/skills/find-skill/.env` (chmod 600, shared across all 4 agents).
+### How to get a SkillsMP key
+
+1. Go to **https://skillsmp.com** → sign in (GitHub OAuth).
+2. Open **Settings → API keys** → **Create new key**.
+3. Copy the key (it looks like `smp_xxxxxxxxxxxx`).
+
+### How to give the key to the agent
+
+**Option A — during install.** The installer (`find-skill` or `./install.sh`) prompts you for the key in step `[2/5]` and writes it to the shared `.env`. Just paste it there.
+
+**Option B — after install** (one command, works anytime):
+
+```bash
+echo 'export SKILLSMP_API_KEY="smp_YOUR_KEY_HERE"' >> ~/.claude/skills/find-skill/.env
+chmod 600 ~/.claude/skills/find-skill/.env
+```
+
+### How the agent uses it
+
+- The key file (`~/.claude/skills/find-skill/.env`) is sourced automatically by `update-skills-catalogue.sh` before calling the SkillsMP API. You do **not** need to pass `--api-key` flags or export anything in your shell.
+- The `/find-skill` slash-command reads the local catalogue first; it only falls through to the live API when results are thin.
+- The key is stored **only** on your machine (`chmod 600`), never committed to git, and shared across all 4 agents (Claude Code, Codex, OpenCode, Cursor) from one file.
+
+### Rotating / removing the key
+
+```bash
+# Edit or remove the line manually:
+$EDITOR ~/.claude/skills/find-skill/.env
+
+# Or wipe just the key (keeps other env vars):
+sed -i.bak '/SKILLSMP_API_KEY/d' ~/.claude/skills/find-skill/.env
+```
 
 ## What gets installed
 

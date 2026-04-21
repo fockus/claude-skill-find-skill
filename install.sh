@@ -106,10 +106,11 @@ for t in "${TARGETS[@]}"; do
     usage
   fi
   already=0
-  for d in "${DEDUPED[@]}"; do [ "$t" = "$d" ] && already=1; done
+  # Guard empty-array expansion for bash 3.2 (macOS) under `set -u`.
+  for d in ${DEDUPED[@]+"${DEDUPED[@]}"}; do [ "$t" = "$d" ] && already=1; done
   [ $already -eq 0 ] && DEDUPED+=("$t")
 done
-TARGETS=("${DEDUPED[@]}")
+TARGETS=(${DEDUPED[@]+"${DEDUPED[@]}"})
 
 echo -e "${BOLD}═══ Installing find-skill ═══${NC}"
 echo -e "  Targets: ${GREEN}${TARGETS[*]}${NC}"
@@ -149,14 +150,21 @@ echo -e "${BLUE}[2/5] Marketplace API key (optional)${NC}"
 if grep -q "SKILLSMP_API_KEY=" "$SHARED_ENV" 2>/dev/null; then
   echo -e "  ${YELLOW}~${NC} SkillsMP key already configured (skipping)"
 else
-  echo "  SkillsMP — community skill marketplace (skillsmp.com)"
-  echo -n "  Enter SkillsMP API key (or press Enter to skip): "
+  echo "  SkillsMP is an optional community marketplace (+352 skills)."
+  echo "  The local catalogue (4800+ skills) works fine without a key."
+  echo ""
+  echo -e "  ${BOLD}Get a free key:${NC} https://skillsmp.com  →  sign in  →  Settings → API keys"
+  echo "  The key is stored only in: $SHARED_ENV  (chmod 600, never committed)"
+  echo ""
+  echo -n "  Paste SkillsMP API key (or press Enter to skip): "
   read -r skillsmp_key
   if [ -n "$skillsmp_key" ]; then
     echo "export SKILLSMP_API_KEY=\"$skillsmp_key\"" >> "$SHARED_ENV"
-    echo -e "  ${GREEN}✓${NC} SkillsMP key saved to shared env"
+    echo -e "  ${GREEN}✓${NC} Saved. The agent will automatically source this file when searching."
+    echo -e "    To change later: edit $SHARED_ENV"
   else
-    echo -e "  ${YELLOW}~${NC} Skipped (local catalogue still works)"
+    echo -e "  ${YELLOW}~${NC} Skipped. To add later:"
+    echo "      echo 'export SKILLSMP_API_KEY=\"YOUR_KEY\"' >> $SHARED_ENV"
   fi
 fi
 

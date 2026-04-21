@@ -176,17 +176,39 @@ print(json.dumps(output, indent=2, ensure_ascii=False))
 ## Stage 3 — Live search (if catalogue returns < 2 results)
 
 ### SkillsMP API:
+
+The key lives in `~/.claude/skills/find-skill/.env` (`SKILLSMP_API_KEY`). Source it, then call the API:
+
 ```bash
 source "$HOME/.claude/skills/find-skill/.env" 2>/dev/null
 
-# Keyword search
-curl -s "https://skillsmp.com/api/v1/skills/search?q=QUERY&limit=LIMIT" \
-  -H "Authorization: Bearer $SKILLSMP_API_KEY"
+# If the variable is missing, tell the user once (not on every call):
+if [ -z "${SKILLSMP_API_KEY:-}" ]; then
+  cat <<'MSG'
+  SkillsMP key not configured — live search is unavailable.
+  To enable it:
+    1. Get a free key at https://skillsmp.com (sign in → Settings → API keys)
+    2. Save it:
+       echo 'export SKILLSMP_API_KEY="smp_YOUR_KEY"' >> ~/.claude/skills/find-skill/.env
+       chmod 600 ~/.claude/skills/find-skill/.env
+    3. Re-run the search.
+  Falling back to local catalogue only.
+MSG
+else
+  # Keyword search
+  curl -s "https://skillsmp.com/api/v1/skills/search?q=QUERY&limit=LIMIT" \
+    -H "Authorization: Bearer $SKILLSMP_API_KEY"
 
-# AI semantic search
-curl -s "https://skillsmp.com/api/v1/skills/ai-search?q=QUERY+CONTEXT" \
-  -H "Authorization: Bearer $SKILLSMP_API_KEY"
+  # AI semantic search
+  curl -s "https://skillsmp.com/api/v1/skills/ai-search?q=QUERY+CONTEXT" \
+    -H "Authorization: Bearer $SKILLSMP_API_KEY"
+fi
 ```
+
+**How the key is managed:**
+- The installer prompts for it once and writes it to `~/.claude/skills/find-skill/.env` (chmod 600).
+- You (the agent) must always `source` that file before any SkillsMP call — do **not** read it via `cat` and do **not** print the raw key.
+- If the user asks how to add/rotate the key, point them to `README.md` → "API keys" or show the one-liner above.
 
 ---
 

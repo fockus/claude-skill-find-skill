@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "find-skill"
-version = "1.0.0"
+version = "1.0.1"
 description = "Multi-agent skill discovery — search 4800+ skills from 14 sources for Claude Code, Codex, OpenCode, Cursor"
 readme = "README.md"
 license = "MIT"
